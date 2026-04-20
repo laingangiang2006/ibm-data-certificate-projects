@@ -1,0 +1,87 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import scipy.stats
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+boston_df=pd.read_csv('https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-ST0151EN-SkillsNetwork/labs/boston_housing.csv')
+# Task 1
+
+# Display first 5 rows
+print(boston_df.head())
+
+# Display data types
+print(boston_df.dtypes)
+
+# Check for missing values
+print(boston_df.isnull().sum())
+
+# Check for duplicate rows
+print(boston_df.duplicated().sum())
+
+# Correlation matrix
+print(boston_df.select_dtypes(include='number').corr())
+
+# Task 2
+
+# Descriptive statistics
+print(boston_df.describe())
+
+plt.figure()
+plt.boxplot(boston_df['MEDV'])
+plt.title("Boxplot of MEDV")
+plt.ylabel("Median Value")
+plt.show()
+
+boston_df['CHAS'].value_counts().plot(kind='bar')
+plt.title("Count of Houses Bounded by Charles River")
+plt.xlabel("CHAS (0 = No, 1 = Yes)")
+plt.ylabel("Count")
+plt.show()
+
+boston_df['AGE_GROUP'] = pd.cut(boston_df['AGE'],
+                                 bins=[0, 35, 70, 100],
+                                 labels=['Young', 'Middle', 'Old'])
+
+sns.boxplot(x='AGE_GROUP', y='MEDV', data=boston_df)
+plt.title("MEDV vs AGE Group")
+plt.show()
+
+plt.scatter(boston_df['INDUS'], boston_df['NOX'])
+plt.xlabel("INDUS")
+plt.ylabel("NOX")
+plt.title("NOX vs INDUS")
+plt.show()
+
+plt.hist(boston_df['PTRATIO'])
+plt.title("Histogram of PTRATIO")
+plt.xlabel("Pupil-Teacher Ratio")
+plt.ylabel("Frequency")
+plt.show()
+
+# Task 3
+
+levene_result = scipy.stats.levene(
+    boston_df[boston_df['CHAS'] == 0]['MEDV'],
+    boston_df[boston_df['CHAS'] == 1]['MEDV']
+)
+print(levene_result)
+
+print(scipy.stats.ttest_ind(
+    boston_df[boston_df['CHAS'] == 0]['MEDV'],
+    boston_df[boston_df['CHAS'] == 1]['MEDV'],
+    equal_var = levene_result.pvalue > 0.05
+))
+
+model = ols('MEDV ~ AGE_GROUP', data=boston_df).fit()
+anova_table = sm.stats.anova_lm(model, typ=2)
+print(anova_table)
+
+print(scipy.stats.pearsonr(boston_df['NOX'], boston_df['INDUS']))
+
+X = sm.add_constant(boston_df['DIS'])
+y = boston_df['MEDV']
+
+model = sm.OLS(y, X).fit()
+print(model.summary())
